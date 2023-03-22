@@ -1,30 +1,40 @@
 const express = require("express");
 const Redis = require("ioredis");
-const { connectToMongo, fetchPhoneRecordModel } = require("./config.js");
+const { connectToMongo, fetchPhoneRecordModel, fetchUserModel } = require("./config.js");
 
 const app = express();
-const md5_device_hash = '867e57bd062c7169995dc03cc0541c19';
-const redisKey = `${md5_device_hash}_current_run`;
 connectToMongo();
 const PhoneRecord = fetchPhoneRecordModel();
+const UserModel = fetchUserModel();
 const port = 3000;
 
 
-function verifyAuthToken(req, res, next) {
+async function verifyAuthToken(req, res, next) {
     try{
+        const md5_device_hash = req.headers.authtoken;
+        const email = req.headers.email;
 
-        const authToken = req.headers.authtoken;
-        if(!authToken || authToken !== md5_device_hash){
+        if(!md5_device_hash){
+            return res.status(401).send("Unauthorized0");
+        }
+
+        if(!email){
             return res.status(401).send("Unauthorized1");
         }
 
+        const users = await UserModel.find({ email });
+        if(users.length ===0 ){
+            return res.status(401).send("Unauthorized2");
+        }
+
+        req.user = {email:users[0].email, md5_device_hash}
         next();
     }catch(err){
-        return res.status(401).send("Unauthorized2");
+        return res.status(401).send("Unauthorized3");
     }
 }
 
-app.get(["/", "/:name"], (req, res) => {
+app.get("/", (req, res) => {
   greeting = "<h1>Hello From Node on Fly!</h1>";
   name = req.params["name"];
   if (name) {
@@ -34,15 +44,26 @@ app.get(["/", "/:name"], (req, res) => {
   }
 });
 
+app.get("/register/:email", async (req, res) => {
+    email = req.params["email"];
+    let users = await UserModel.find({email})
+    if (users.length >0){
+        return res.status(400).send("User exists")
+    }
+    await UserModel.create({email})
+    res.status(200).send("OK")
+});
+
 app.get("/api/v1/start-date", verifyAuthToken, async (req, res) => {
     try{
-        const record = await PhoneRecord.create({md5_device_hash})
+        const {email, md5_device_hash} = req.user;
+        const record = await PhoneRecord.create({email, md5_device_hash})
         const client = new Redis(
-          "redis://default:P913VqAW9hjinSImJLGkECq2uUPxJFat@redis-10896.c11.us-east-1-2.ec2.cloud.redislabs.com:10896"
+          "redis://default:de9062dc-c867-11ed-afa1-0242ac120002@redis-10896.c11.us-east-1-2.ec2.cloud.redislabs.com:10896"
         );
 
-
-        await client.set(redisKey, String(record._id))
+        const redisKey = `${email}-${md5_device_hash}`;
+        await client.set(redisKey, String(record._id));
 
         res.status(200).send("OK");
 
@@ -53,13 +74,15 @@ app.get("/api/v1/start-date", verifyAuthToken, async (req, res) => {
 
 });
 
-app.get("/api/v1/stop-date", async (req, res) => {
+app.get("/api/v1/stop-date", verifyAuthToken, async (req, res) => {
   try {
-    
+      const {email, md5_device_hash } = req.user;
+
     const client = new Redis(
-      "redis://default:P913VqAW9hjinSImJLGkECq2uUPxJFat@redis-10896.c11.us-east-1-2.ec2.cloud.redislabs.com:10896"
+      "redis://default:de9062dc-c867-11ed-afa1-0242ac120002@redis-10896.c11.us-east-1-2.ec2.cloud.redislabs.com:10896"
     );
 
+      const redisKey = `${email}-${md5_device_hash}`;
     const currentlyOpenId = await client.get(redisKey);
 
     await PhoneRecord.updateOne({ _id: currentlyOpenId },{ stop_date: new Date() });
