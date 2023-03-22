@@ -59,7 +59,7 @@ app.get("/api/v1/start-date", verifyAuthToken, async (req, res) => {
         const {email, md5_device_hash} = req.user;
         const record = await PhoneRecord.create({email, md5_device_hash})
         const client = new Redis(
-          "redis://default:de9062dc-c867-11ed-afa1-0242ac120002@redis-10896.c11.us-east-1-2.ec2.cloud.redislabs.com:10896"
+          "redis://default:xvr8m1Q2Rbx5AuzTgQCTyv0OFIRdynIE@redis-11462.c256.us-east-1-2.ec2.cloud.redislabs.com:11462"
         );
 
         const redisKey = `${email}-${md5_device_hash}`;
@@ -79,7 +79,7 @@ app.get("/api/v1/stop-date", verifyAuthToken, async (req, res) => {
       const {email, md5_device_hash } = req.user;
 
     const client = new Redis(
-      "redis://default:de9062dc-c867-11ed-afa1-0242ac120002@redis-10896.c11.us-east-1-2.ec2.cloud.redislabs.com:10896"
+      "redis://default:xvr8m1Q2Rbx5AuzTgQCTyv0OFIRdynIE@redis-11462.c256.us-east-1-2.ec2.cloud.redislabs.com:11462"
     );
 
       const redisKey = `${email}-${md5_device_hash}`;

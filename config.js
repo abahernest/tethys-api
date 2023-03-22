@@ -41,7 +41,7 @@ function fetchUserModel() {
 
 async function connectToRedis(){
     const client = new Redis(
-      "redis://default:de9062dc-c867-11ed-afa1-0242ac120002@redis-10896.c11.us-east-1-2.ec2.cloud.redislabs.com:10896"
+      "redis://default:xvr8m1Q2Rbx5AuzTgQCTyv0OFIRdynIE@redis-11462.c256.us-east-1-2.ec2.cloud.redislabs.com:11462"
     );
 
     console.log("Connected to Redis");
