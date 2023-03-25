@@ -1,4 +1,4 @@
-# fly.toml file generated for tethys-api on 2023-03-02T03:37:01+01:00
+# fly.toml file generated for tethys-api on 2023-03-25T02:55:38+01:00
 
 app = "tethys-api"
 kill_signal = "SIGINT"
