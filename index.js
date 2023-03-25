@@ -1,6 +1,8 @@
 const express = require("express");
 const Redis = require("ioredis");
 const { connectToMongo, fetchPhoneRecordModel, fetchUserModel } = require("./config.js");
+const clock = require("./clock.js");
+
 
 const app = express();
 connectToMongo();
@@ -54,6 +56,9 @@ app.get("/register/:email", async (req, res) => {
     res.status(200).send("OK")
 });
 
+const generateHashKey = (email, md5_device_hash)=>{
+    return `${email}-${md5_device_hash}`
+}
 app.get("/api/v1/start-date", verifyAuthToken, async (req, res) => {
     try{
         const {email, md5_device_hash} = req.user;
@@ -62,7 +67,7 @@ app.get("/api/v1/start-date", verifyAuthToken, async (req, res) => {
           "redis://default:xvr8m1Q2Rbx5AuzTgQCTyv0OFIRdynIE@redis-11462.c256.us-east-1-2.ec2.cloud.redislabs.com:11462"
         );
 
-        const redisKey = `${email}-${md5_device_hash}`;
+        const redisKey = generateHashKey(email, md5_device_hash);
         await client.set(redisKey, String(record._id));
 
         res.status(200).send("OK");
@@ -82,7 +87,7 @@ app.get("/api/v1/stop-date", verifyAuthToken, async (req, res) => {
       "redis://default:xvr8m1Q2Rbx5AuzTgQCTyv0OFIRdynIE@redis-11462.c256.us-east-1-2.ec2.cloud.redislabs.com:11462"
     );
 
-      const redisKey = `${email}-${md5_device_hash}`;
+      const redisKey = generateHashKey(email, md5_device_hash);
     const currentlyOpenId = await client.get(redisKey);
 
     await PhoneRecord.updateOne({ _id: currentlyOpenId },{ stop_date: new Date() });
@@ -94,4 +99,6 @@ app.get("/api/v1/stop-date", verifyAuthToken, async (req, res) => {
   }
 });
 
-app.listen(port, () => console.log(`ErnestInstagramUsage app listening on port ${port}!`));
+
+clock();
+app.listen(port, () => console.log(`Tethys app listening on port ${port}!`));
