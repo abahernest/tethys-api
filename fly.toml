@@ -1,6 +1,6 @@
-# fly.toml file generated for ernest-instagram-usage on 2023-03-02T03:37:01+01:00
+# fly.toml file generated for tethys-api on 2023-03-02T03:37:01+01:00
 
-app = "ernest-instagram-usage"
+app = "tethys-api"
 kill_signal = "SIGINT"
 kill_timeout = 5
 processes = []
