@@ -2,10 +2,13 @@ const express = require("express");
 const Redis = require("ioredis");
 const { connectToMongo, fetchPhoneRecordModel, fetchUserModel } = require("./config.js");
 const clock = require("./clock.js");
-
+const { config } = require("dotenv");
+const {connectToRedis} = require("./config");
+config();
 
 const app = express();
 connectToMongo();
+const RedisClient = connectToRedis()
 const PhoneRecord = fetchPhoneRecordModel();
 const UserModel = fetchUserModel();
 const port = 3000;
@@ -67,12 +70,9 @@ app.get("/api/v1/start-date", verifyAuthToken, async (req, res) => {
     try{
         const {email, md5_device_hash, app_name} = req.user;
         const record = await PhoneRecord.create({email, md5_device_hash, app_name})
-        const client = new Redis(
-          "redis://default:xvr8m1Q2Rbx5AuzTgQCTyv0OFIRdynIE@redis-11462.c256.us-east-1-2.ec2.cloud.redislabs.com:11462"
-        );
 
         const redisKey = generateHashKey(email, md5_device_hash, app_name);
-        await client.set(redisKey, String(record._id));
+        await (await RedisClient).set(redisKey, String(record._id));
 
         res.status(200).send("OK");
 
@@ -87,12 +87,8 @@ app.get("/api/v1/stop-date", verifyAuthToken, async (req, res) => {
   try {
       const {email, md5_device_hash, app_name } = req.user;
 
-    const client = new Redis(
-      "redis://default:xvr8m1Q2Rbx5AuzTgQCTyv0OFIRdynIE@redis-11462.c256.us-east-1-2.ec2.cloud.redislabs.com:11462"
-    );
-
-      const redisKey = generateHashKey(email, md5_device_hash, app_name);
-    const currentlyOpenId = await client.get(redisKey);
+    const redisKey = generateHashKey(email, md5_device_hash, app_name);
+    const currentlyOpenId = await (await RedisClient).get(redisKey);
 
     await PhoneRecord.updateOne({ _id: currentlyOpenId },{ stop_date: new Date() });
 

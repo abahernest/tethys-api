@@ -1,11 +1,12 @@
 const nodemailer = require("nodemailer");
 const mongoose = require("mongoose");
 const { workerData } = require("worker_threads");
+const Redis = require("ioredis");
 
 
 async function connectToMongo() {
     mongoose.connect(
-    "mongodb+srv://acumen:q8am6KHkQLRy55le@cluster0.3ekrb.mongodb.net/ErnestInstagramUsage?retryWrites=true&w=majority",
+    process.env.MONGODB_URL,
     {
       useNewUrlParser: true,
       useUnifiedTopology: true,
@@ -44,10 +45,13 @@ function fetchUserModel() {
 
 async function connectToRedis(){
     const client = new Redis(
-      "redis://default:xvr8m1Q2Rbx5AuzTgQCTyv0OFIRdynIE@redis-11462.c256.us-east-1-2.ec2.cloud.redislabs.com:11462"
+      process.env.REDIS_URL
     );
 
-    console.log("Connected to Redis");
+    client.once('error', (error)=>{
+        console.log('Error connecting to redis server', error)
+    })
+    console.log('Connected to redis server')
     return client;
 }
 
@@ -56,8 +60,7 @@ async function sendMail(toAddress, subject, message) {
 
     const EMAIL_HOST= "smtp.gmail.com"
     const EMAIL_HOST_PORT= 587
-    const EMAIL_HOST_USER= "app.tethys@gmail.com"
-    const EMAIL_HOST_PASSWORD= "ljkxbdoaqinvhdfe"
+    const { EMAIL_HOST_USER, EMAIL_HOST_PASSWORD } = process.env
 
     // create reusable transporter object using the default SMTP transport
     let transporter = nodemailer.createTransport({
